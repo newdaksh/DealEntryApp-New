@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "DealEntryApp",
-    "slug": "DealEntryApp",
+    "slug": "jain-property-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -42,8 +42,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e969def9-31b2-47e2-90cd-5005fd8af697"
+        "projectId": "06fb4c40-88c0-4c21-b01b-af04f04f0c51"
       }
-    }
+    },
+    "owner": "daksh.verse"
   }
 }
