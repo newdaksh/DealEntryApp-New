@@ -107,6 +107,7 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function App() {
   const [mode, setMode] = useState<Mode | null>(null);
+  const [isHomeScreen, setIsHomeScreen] = useState(true);
 
   // Shared form states (existing)
   const [dealDate, setDealDate] = useState<Date>(new Date());
@@ -139,6 +140,9 @@ export default function App() {
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const confettiOpacity = useRef(new Animated.Value(0)).current;
 
+  // Home Button Animations
+  const homeButtonPulse = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     if (mode) {
       Animated.parallel([
@@ -158,6 +162,28 @@ export default function App() {
       formTranslateY.setValue(20);
     }
   }, [mode]);
+
+  // Home button pulsing animation
+  useEffect(() => {
+    if (!isHomeScreen) {
+      const pulseAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(homeButtonPulse, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(homeButtonPulse, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulseAnimation.start();
+      return () => pulseAnimation.stop();
+    }
+  }, [isHomeScreen, homeButtonPulse]);
 
   const canSubmit = useMemo(() => {
     if (!mode) return false;
@@ -923,36 +949,50 @@ export default function App() {
     );
   }
 
+  // Handle going back to home
+  function goToHome() {
+    setMode(null);
+    setIsHomeScreen(true);
+  }
+
+  // Handle mode selection
+  function selectMode(selectedMode: Mode) {
+    setMode(selectedMode);
+    setIsHomeScreen(false);
+  }
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Premium Hero Section */}
-      <ImageBackground
-        source={{
-          uri: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80",
-        }}
-        style={styles.heroBackground}
-        imageStyle={styles.heroImage}
-      >
-        <LinearGradient
-          colors={colors.heroGradient}
-          style={styles.heroGradient}
+      {/* Premium Hero Section - Only show on home screen */}
+      {isHomeScreen && (
+        <ImageBackground
+          source={{
+            uri: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80",
+          }}
+          style={styles.heroBackground}
+          imageStyle={styles.heroImage}
         >
-          <View style={styles.heroContent}>
-            <Animated.View
-              style={[styles.heroTextContainer, { opacity: formOpacity }]}
-            >
-              <Text style={styles.heroTitle}>पार्श्वनाथ Properties</Text>
-              <Text style={styles.heroSubtitle}>
-                Premium Real Estate Solutions
-              </Text>
-              <View style={styles.heroDivider} />
-              <Text style={styles.heroDescription}>
-                Professional property management and deal tracking platform
-              </Text>
-            </Animated.View>
-          </View>
-        </LinearGradient>
-      </ImageBackground>
+          <LinearGradient
+            colors={colors.heroGradient}
+            style={styles.heroGradient}
+          >
+            <View style={styles.heroContent}>
+              <Animated.View
+                style={[styles.heroTextContainer, { opacity: formOpacity }]}
+              >
+                <Text style={styles.heroTitle}>पार्श्वनाथ Properties</Text>
+                <Text style={styles.heroSubtitle}>
+                  Premium Real Estate Solutions
+                </Text>
+                <View style={styles.heroDivider} />
+                <Text style={styles.heroDescription}>
+                  Professional property management and deal tracking platform
+                </Text>
+              </Animated.View>
+            </View>
+          </LinearGradient>
+        </ImageBackground>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: "padding", android: undefined })}
@@ -960,6 +1000,9 @@ export default function App() {
       >
         <ScrollView
           style={styles.container}
+          contentContainerStyle={
+            !isHomeScreen ? styles.containerWithHomeButton : undefined
+          }
           showsVerticalScrollIndicator={false}
         >
           {/* Modern Mode Selector */}
@@ -971,7 +1014,7 @@ export default function App() {
                   styles.modeBtn,
                   mode === "regular" && styles.modeBtnActive,
                 ]}
-                onPress={() => setMode("regular")}
+                onPress={() => selectMode("regular")}
               >
                 <Ionicons
                   name="document-text-outline"
@@ -1002,7 +1045,7 @@ export default function App() {
                   styles.modeBtn,
                   mode === "deal" && styles.modeBtnActive,
                 ]}
-                onPress={() => setMode("deal")}
+                onPress={() => selectMode("deal")}
               >
                 <Ionicons
                   name="business-outline"
@@ -1033,7 +1076,7 @@ export default function App() {
                   styles.modeBtn,
                   mode === "tracker" && styles.modeBtnActive,
                 ]}
-                onPress={() => setMode("tracker")}
+                onPress={() => selectMode("tracker")}
               >
                 <Ionicons
                   name="search-outline"
@@ -1603,6 +1646,73 @@ export default function App() {
           </Modal>
         </ScrollView>
       </KeyboardAvoidingView>
+      {!isHomeScreen && (
+        <View style={styles.homeFooter} pointerEvents="box-none">
+          <LinearGradient
+            colors={colors.primaryGradient}
+            style={styles.homeButtonGradient}
+          >
+            <TouchableOpacity
+              style={styles.homeButton}
+              onPress={goToHome}
+              activeOpacity={0.8}
+            >
+              <Animated.View
+                style={[
+                  styles.homeButtonContent,
+                  { transform: [{ scale: homeButtonPulse }] },
+                ]}
+              >
+                <View style={styles.homeIconContainer}>
+                  <Ionicons name="home" size={24} color={colors.textWhite} />
+                  <View style={styles.homeIconGlow} />
+                </View>
+                <Text style={styles.homeButtonText}>Home</Text>
+              </Animated.View>
+
+              {/* Floating sparkles effect */}
+              <View style={styles.sparklesContainer}>
+                {[...Array(6)].map((_, i) => (
+                  <Animated.View
+                    key={i}
+                    style={[
+                      styles.sparkle,
+                      {
+                        left: `${15 + i * 12}%`,
+                        top: `${20 + (i % 2) * 40}%`,
+                        opacity: homeButtonPulse.interpolate({
+                          inputRange: [1, 1.05],
+                          outputRange: [0.3, 0.8],
+                        }),
+                        transform: [
+                          {
+                            scale: homeButtonPulse.interpolate({
+                              inputRange: [1, 1.05],
+                              outputRange: [0.5, 1],
+                            }),
+                          },
+                          {
+                            rotate: homeButtonPulse.interpolate({
+                              inputRange: [1, 1.05],
+                              outputRange: ["0deg", "180deg"],
+                            }),
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="diamond"
+                      size={8}
+                      color={colors.accentLight}
+                    />
+                  </Animated.View>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      )}
     </View>
   );
 }
@@ -1672,6 +1782,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardBackground,
     paddingHorizontal: 20,
     paddingTop: 20,
+  },
+  containerWithHomeButton: {
+    paddingBottom: 100, // Extra space for home button
   },
 
   // Mode Section
@@ -2184,5 +2297,92 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.success,
+  },
+
+  // STUNNING HOME BUTTON FOOTER STYLES
+  homeFooter: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 34 : 16, // Account for safe area
+    backgroundColor: "transparent",
+    borderTopWidth: 0,
+    alignItems: "center",
+  },
+  homeButtonGradient: {
+    borderRadius: 25,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  homeButton: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
+  },
+  homeButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  homeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+    position: "relative",
+  },
+  homeIconGlow: {
+    position: "absolute",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    top: -2,
+    left: -2,
+  },
+  homeButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: colors.textWhite,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  homeButtonPulse: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 25,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+  sparklesContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 25,
+    overflow: "hidden",
+  },
+  sparkle: {
+    position: "absolute",
   },
 });
