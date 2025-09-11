@@ -104,11 +104,13 @@ export default function App() {
         style={{ flex: 1 }}
       >
         {mode === "tracker" ? (
-          <View
-            style={[
-              styles.container,
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={[
               !isHomeScreen ? styles.containerWithHomeButton : undefined,
+              { flexGrow: 1 },
             ]}
+            showsVerticalScrollIndicator={false}
           >
             <TrackerComponent
               trackerQuery={trackerQuery}
@@ -134,7 +136,7 @@ export default function App() {
               formTranslateY={formTranslateY}
               setTrackerResults={setTrackerResults}
             />
-          </View>
+          </ScrollView>
         ) : (
           <ScrollView
             style={styles.container}

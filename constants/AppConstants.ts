@@ -66,6 +66,7 @@ export const colors = {
   info: "#0EA5E9",
   success: "#10B981",
   border: "#E2E8F0",
+  borderLight: "#F1F5F9",
   divider: "#F1F5F9",
   overlay: "rgba(0,0,0,0.4)",
   cardGradient: ["#FFFFFF", "#F8FAFC"],
@@ -76,4 +77,7 @@ export const colors = {
   ],
   // Light theme colors
   inputBg: "#F1F5F9",
+  chipBg: "#F1F5F9",
+  chipText: "#64748B",
+  disabled: "#94A3B8",
 }; // Add your desired splash gradient colors here

@@ -318,6 +318,8 @@ export const styles = StyleSheet.create({
   // Results Section
   resultsSection: {
     marginTop: 24,
+    flex: 1,
+    minHeight: 200,
   },
   loadingContainer: {
     alignItems: "center",

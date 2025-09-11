@@ -317,14 +317,11 @@ export function TrackerComponent({
                   {trackerResults.length !== 1 ? "s" : ""} found
                 </Text>
               </View>
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 20 }}
-              >
+              <View style={{ paddingBottom: 20 }}>
                 {trackerResults.map((item, index) => (
                   <View key={index}>{renderResultItem({ item })}</View>
                 ))}
-              </ScrollView>
+              </View>
             </View>
           )}
         </View>
