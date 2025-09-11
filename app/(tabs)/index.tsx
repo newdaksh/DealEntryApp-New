@@ -15,6 +15,7 @@ import { HomeButton } from "../../components/HomeButton";
 import { RegularForm } from "../../components/RegularForm";
 import { SharedFormFields } from "../../components/SharedFormFields";
 import SplashAnimation from "../../components/SplashAnimation"; // ✅ include splash
+import SubmitSuccessModal from "../../components/SubmitSuccessModal";
 import { SuccessModal } from "../../components/SuccessModal";
 import { TrackerComponent } from "../../components/TrackerComponent";
 import {
@@ -446,6 +447,11 @@ export default function App() {
         popupScale={popupScale}
         checkmarkScale={checkmarkScale}
         confettiOpacity={confettiOpacity}
+        onRequestClose={() => setShowSuccessPopup(false)}
+      />
+
+      <SubmitSuccessModal
+        visible={showSuccessPopup}
         onRequestClose={() => setShowSuccessPopup(false)}
       />
 
