@@ -379,8 +379,8 @@ const SplashAnimation: React.FC<SplashAnimationProps> = ({ onComplete }) => {
             },
           ]}
         >
-          <Text style={styles.title}>Property Deals</Text>
-          <Text style={styles.titleAccent}>Manager</Text>
+          <Text style={styles.title}>पार्श्वनाथ Properties 🏠</Text>
+          <Text style={styles.titleAccent}>Your Trusted Partner 🔑</Text>
         </Animated.View>
 
         {/* Subtitle */}
