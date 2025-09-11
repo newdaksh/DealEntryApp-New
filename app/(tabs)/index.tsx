@@ -1,12 +1,16 @@
 // index.tsx
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { encode as btoa } from "base-64";
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Dimensions,
   FlatList,
+  ImageBackground,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -31,23 +35,45 @@ const BASIC_AUTH_PASSWORD = "SanjayJain12";
 const STATUS_OPTIONS = ["Done", "Pending", "Future Task"] as const;
 type Status = (typeof STATUS_OPTIONS)[number];
 
+const { width, height } = Dimensions.get("window");
+
 const colors = {
-  background: "#f4f7fa",
-  textPrimary: "#2c3e50",
-  textSecondary: "#7f8c8d",
-  primary: "#3498db",
-  accent: "#e67e22",
-  border: "#d1d5db",
+  // Premium Real Estate Color Palette
+  background: "#0a0e13",
+  backgroundLight: "#1a1f26",
+  cardBackground: "#ffffff",
+  textPrimary: "#1a202c",
+  textSecondary: "#4a5568",
+  textLight: "#a0aec0",
+  textWhite: "#ffffff",
+
+  // Brand Colors
+  primary: "#2b6cb0", // Professional Blue
+  primaryLight: "#3182ce",
+  primaryDark: "#2c5282",
+  accent: "#d69e2e", // Gold Accent
+  accentLight: "#ecc94b",
+
+  // Status Colors
+  success: "#38a169",
+  warning: "#d69e2e",
+  error: "#e53e3e",
+  info: "#3182ce",
+
+  // UI Colors
+  border: "#e2e8f0",
+  borderLight: "#f7fafc",
   inputBg: "#ffffff",
-  chipBg: "#ecf0f1",
-  chipText: "#34495e",
+  chipBg: "#f7fafc",
+  chipText: "#4a5568",
   chipTextActive: "#ffffff",
-  btnPrimary: "#3498db",
-  btnTextPrimary: "#ffffff",
-  btnSecondary: "#ffffff",
-  btnSecondaryBorder: "#bdc3c7",
-  btnTextSecondary: "#2c3e50",
-  disabled: "#bdc3c7",
+  disabled: "#cbd5e0",
+
+  // Gradients
+  primaryGradient: ["#2b6cb0", "#3182ce"] as const,
+  accentGradient: ["#d69e2e", "#ecc94b"] as const,
+  heroGradient: ["rgba(43, 108, 176, 0.9)", "rgba(49, 130, 206, 0.8)"] as const,
+  cardGradient: ["#ffffff", "#f8fafc"] as const,
 };
 
 // Helper functions
@@ -98,11 +124,20 @@ export default function App() {
 
   const [submitting, setSubmitting] = useState(false);
 
+  // Success Popup State
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
   // Animations
   const formOpacity = useRef(new Animated.Value(0)).current;
   const formTranslateY = useRef(new Animated.Value(20)).current;
   const submitScale = useRef(new Animated.Value(1)).current;
   const resetScale = useRef(new Animated.Value(1)).current;
+
+  // Success Popup Animations
+  const popupOpacity = useRef(new Animated.Value(0)).current;
+  const popupScale = useRef(new Animated.Value(0.3)).current;
+  const checkmarkScale = useRef(new Animated.Value(0)).current;
+  const confettiOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (mode) {
@@ -145,6 +180,70 @@ export default function App() {
     setDealer("");
     setCustomer("");
     setAmount("");
+  }
+
+  // Impressive Success Popup Animation
+  function showImpressiveSuccess() {
+    setShowSuccessPopup(true);
+
+    // Reset all animation values
+    popupOpacity.setValue(0);
+    popupScale.setValue(0.3);
+    checkmarkScale.setValue(0);
+    confettiOpacity.setValue(0);
+
+    // Sequence of impressive animations
+    Animated.sequence([
+      // 1. Popup appears with scale and fade
+      Animated.parallel([
+        Animated.timing(popupOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(popupScale, {
+          toValue: 1,
+          friction: 8,
+          tension: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+
+      // 2. Checkmark bounces in
+      Animated.spring(checkmarkScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 150,
+        useNativeDriver: true,
+      }),
+
+      // 3. Confetti effect
+      Animated.timing(confettiOpacity, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+
+      // 4. Wait a moment
+      Animated.delay(1500),
+
+      // 5. Hide popup with fade out
+      Animated.parallel([
+        Animated.timing(popupOpacity, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(popupScale, {
+          toValue: 0.8,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setShowSuccessPopup(false);
+      resetAll();
+    });
   }
 
   async function submit() {
@@ -218,8 +317,8 @@ export default function App() {
         return;
       }
 
-      Alert.alert("Success", "Entry saved successfully.");
-      resetAll();
+      // Show impressive success popup instead of alert
+      showImpressiveSuccess();
     } catch (e: any) {
       Alert.alert("Network error", e?.message ?? "Something went wrong.");
     } finally {
@@ -294,13 +393,21 @@ export default function App() {
             const lastBracket = ub.lastIndexOf("]");
             const firstBrace = ub.indexOf("{");
             const lastBrace = ub.lastIndexOf("}");
-            if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+            if (
+              firstBracket !== -1 &&
+              lastBracket !== -1 &&
+              lastBracket > firstBracket
+            ) {
               const candidate = ub.slice(firstBracket, lastBracket + 1);
               try {
                 dataToParse = JSON.parse(candidate);
               } catch (e2) {
                 // try object substring
-                if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                if (
+                  firstBrace !== -1 &&
+                  lastBrace !== -1 &&
+                  lastBrace > firstBrace
+                ) {
                   const cand2 = ub.slice(firstBrace, lastBrace + 1);
                   try {
                     dataToParse = JSON.parse(cand2);
@@ -513,7 +620,8 @@ export default function App() {
       getVal(["customer", "Customer", "Customer Name", "CustomerName"]) ??
       undefined;
     const senderRaw =
-      getVal(["senderName", "sender name", "Sender Name", "sender"]) ?? undefined;
+      getVal(["senderName", "sender name", "Sender Name", "sender"]) ??
+      undefined;
     const receiverRaw =
       getVal(["receiverName", "receiver name", "Receiver Name", "receiver"]) ??
       undefined;
@@ -614,7 +722,11 @@ export default function App() {
                     const ub: string = wrapper.upstreamBody;
                     const firstBracket = ub.indexOf("[");
                     const lastBracket = ub.lastIndexOf("]");
-                    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+                    if (
+                      firstBracket !== -1 &&
+                      lastBracket !== -1 &&
+                      lastBracket > firstBracket
+                    ) {
                       const cand = ub.slice(firstBracket, lastBracket + 1);
                       try {
                         return JSON.parse(cand);
@@ -667,550 +779,1183 @@ export default function App() {
     if (mode === "tracker") fetchSuggestions();
   }, [mode]);
 
-  // small item renderer
+  // Enhanced premium result item renderer
   function renderResultItem({ item }: { item: any }) {
+    const isDeal = item.type === "Deal";
+
     return (
-      <View style={styles.resultCard}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={styles.resultType}>{item.type}</Text>
-          <Text style={{ color: colors.textSecondary }}>{item.dealDate}</Text>
+      <Animated.View style={styles.resultCard}>
+        {/* Header with type and date */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name={isDeal ? "business" : "document-text"}
+              size={20}
+              color={colors.primary}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.resultType}>{item.type}</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
+              {item.dealDate}
+            </Text>
+          </View>
         </View>
 
-        {item.type === "Deal" ? (
-          <>
-            <Text style={styles.resultLine}>
-              Dealer: <Text style={styles.resultBold}>{item.dealer}</Text>
-            </Text>
-            <Text style={styles.resultLine}>
-              Customer: <Text style={styles.resultBold}>{item.customer}</Text>
-            </Text>
-            <Text style={styles.resultLine}>
-              Amount: <Text style={styles.resultBold}>{item.amount}</Text>
-            </Text>
-          </>
+        {/* Content based on type */}
+        {isDeal ? (
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="storefront-outline"
+                size={16}
+                color={colors.accent}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Dealer: <Text style={styles.resultBold}>{item.dealer}</Text>
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="person-outline"
+                size={16}
+                color={colors.accent}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Customer: <Text style={styles.resultBold}>{item.customer}</Text>
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="cash-outline"
+                size={16}
+                color={colors.success}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Amount:{" "}
+                <Text style={[styles.resultBold, { color: colors.success }]}>
+                  ₹{item.amount}
+                </Text>
+              </Text>
+            </View>
+          </View>
         ) : (
-          <>
-            <Text style={styles.resultLine}>
-              Sender: <Text style={styles.resultBold}>{item.senderName}</Text>
-            </Text>
-            <Text style={styles.resultLine}>
-              Receiver:{" "}
-              <Text style={styles.resultBold}>{item.receiverName}</Text>
-            </Text>
-            <Text style={styles.resultLine}>
-              Amount:{" "}
-              <Text style={styles.resultBold}>{item.amountTransferred}</Text>
-            </Text>
-          </>
+          <View style={{ gap: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="arrow-up-outline"
+                size={16}
+                color={colors.info}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Sender: <Text style={styles.resultBold}>{item.senderName}</Text>
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="arrow-down-outline"
+                size={16}
+                color={colors.info}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Receiver:{" "}
+                <Text style={styles.resultBold}>{item.receiverName}</Text>
+              </Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name="cash-outline"
+                size={16}
+                color={colors.success}
+                style={{ marginRight: 8, width: 20 }}
+              />
+              <Text style={styles.resultLine}>
+                Amount:{" "}
+                <Text style={[styles.resultBold, { color: colors.success }]}>
+                  ₹{item.amountTransferred}
+                </Text>
+              </Text>
+            </View>
+          </View>
         )}
 
-        <View style={{ marginTop: 8, alignSelf: "flex-end" }}>
-          <Text style={{ color: getStatusColor(item.status) }}>
+        {/* Status Badge */}
+        <View
+          style={{
+            marginTop: 16,
+            alignSelf: "flex-end",
+            backgroundColor: getStatusColor(item.status),
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.textWhite,
+              fontSize: 12,
+              fontWeight: "600",
+            }}
+          >
             {item.status}
           </Text>
         </View>
-      </View>
+      </Animated.View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.select({ ios: "padding", android: undefined })}
-      style={{ flex: 1 }}
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>पार्श्वनाथ Properties</Text>
-
-        {/* Mode selector: Regular / Deal / Tracker */}
-        <View style={styles.modeRow}>
-          <TouchableOpacity
-            style={[styles.modeBtn, mode === "regular" && styles.modeBtnActive]}
-            onPress={() => setMode("regular")}
-          >
-            <Text
-              style={[
-                styles.modeText,
-                mode === "regular" && styles.modeTextActive,
-              ]}
+    <View style={{ flex: 1 }}>
+      {/* Premium Hero Section */}
+      <ImageBackground
+        source={{
+          uri: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1973&q=80",
+        }}
+        style={styles.heroBackground}
+        imageStyle={styles.heroImage}
+      >
+        <LinearGradient
+          colors={colors.heroGradient}
+          style={styles.heroGradient}
+        >
+          <View style={styles.heroContent}>
+            <Animated.View
+              style={[styles.heroTextContainer, { opacity: formOpacity }]}
             >
-              Regular Entry
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.heroTitle}>पार्श्वनाथ Properties</Text>
+              <Text style={styles.heroSubtitle}>
+                Premium Real Estate Solutions
+              </Text>
+              <View style={styles.heroDivider} />
+              <Text style={styles.heroDescription}>
+                Professional property management and deal tracking platform
+              </Text>
+            </Animated.View>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
 
-          <TouchableOpacity
-            style={[styles.modeBtn, mode === "deal" && styles.modeBtnActive]}
-            onPress={() => setMode("deal")}
-          >
-            <Text
-              style={[
-                styles.modeText,
-                mode === "deal" && styles.modeTextActive,
-              ]}
-            >
-              Deal Entry
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.modeBtn, mode === "tracker" && styles.modeBtnActive]}
-            onPress={() => setMode("tracker")}
-          >
-            <Text
-              style={[
-                styles.modeText,
-                mode === "tracker" && styles.modeTextActive,
-              ]}
-            >
-              Tracker
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {!mode && (
-          <Text style={styles.noModeText}>Choose an option to start.</Text>
-        )}
-
-        {/* Regular form (unchanged) */}
-        {mode === "regular" && (
-          <Animated.View
-            style={[
-              styles.form,
-              {
-                opacity: formOpacity,
-                transform: [{ translateY: formTranslateY }],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Regular Entry</Text>
-
-            <Text style={styles.label}>Sender Name</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={senderName}
-              onChangeText={setSenderName}
-              placeholder="e.g., Rohan Verma"
-              placeholderTextColor={colors.textSecondary}
-            />
-
-            <Text style={styles.label}>Receiver Name</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={receiverName}
-              onChangeText={setReceiverName}
-              placeholder="e.g., Aman Singh"
-              placeholderTextColor={colors.textSecondary}
-            />
-
-            <Text style={styles.label}>Amount Transferred</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={amountTransferred}
-              onChangeText={(t) =>
-                setAmountTransferred(t.replace(/[^\d.]/g, ""))
-              }
-              keyboardType="decimal-pad"
-              placeholder="e.g., 1500"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </Animated.View>
-        )}
-
-        {/* Deal form (unchanged) */}
-        {mode === "deal" && (
-          <Animated.View
-            style={[
-              styles.form,
-              {
-                opacity: formOpacity,
-                transform: [{ translateY: formTranslateY }],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Deal Entry</Text>
-
-            <Text style={styles.label}>Dealer Name</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={dealer}
-              onChangeText={setDealer}
-              placeholder="e.g., M/S Sharma Traders"
-              placeholderTextColor={colors.textSecondary}
-            />
-
-            <Text style={styles.label}>Customer Name</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={customer}
-              onChangeText={setCustomer}
-              placeholder="e.g., Rahul Jain"
-              placeholderTextColor={colors.textSecondary}
-            />
-
-            <Text style={styles.label}>Amount</Text>
-            <TextInput
-              style={[styles.input, { borderColor: colors.border }]}
-              value={amount}
-              onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ""))}
-              keyboardType="decimal-pad"
-              placeholder="e.g., 25000"
-              placeholderTextColor={colors.textSecondary}
-            />
-          </Animated.View>
-        )}
-
-        {/* Shared fields for regular/deal */}
-        {mode && mode !== "tracker" && (
-          <Animated.View
-            style={{
-              width: "100%",
-              opacity: formOpacity,
-              transform: [{ translateY: formTranslateY }],
-            }}
-          >
-            <Text style={styles.label}>Deal Date</Text>
-            <TouchableOpacity
-              style={[styles.input, styles.datePickerButton]}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateText}>{formatDateDisplay(dealDate)}</Text>
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={dealDate}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event: any, selectedDate?: Date) => {
-                  setShowDatePicker(Platform.OS === "ios");
-                  if (selectedDate) setDealDate(selectedDate);
-                }}
-              />
-            )}
-
-            <Text style={styles.label}>Status</Text>
-            <View style={styles.chipRow}>
-              {STATUS_OPTIONS.map((opt) => (
-                <TouchableOpacity
-                  key={opt}
-                  onPress={() => setStatus(opt)}
+      <KeyboardAvoidingView
+        behavior={Platform.select({ ios: "padding", android: undefined })}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Modern Mode Selector */}
+          <View style={styles.modeSection}>
+            <Text style={styles.sectionHeader}>Select Service</Text>
+            <View style={styles.modeRow}>
+              <TouchableOpacity
+                style={[
+                  styles.modeBtn,
+                  mode === "regular" && styles.modeBtnActive,
+                ]}
+                onPress={() => setMode("regular")}
+              >
+                <Ionicons
+                  name="document-text-outline"
+                  size={24}
+                  color={mode === "regular" ? colors.textWhite : colors.primary}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text
                   style={[
-                    styles.chip,
-                    status === opt && [
-                      styles.chipActive,
-                      {
-                        backgroundColor: getStatusColor(opt),
-                        borderColor: getStatusColor(opt),
-                      },
-                    ],
+                    styles.modeText,
+                    mode === "regular" && styles.modeTextActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      status === opt && styles.chipTextActive,
-                    ]}
-                  >
-                    {opt}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  Regular Entry
+                </Text>
+                <Text
+                  style={[
+                    styles.modeDescription,
+                    mode === "regular" && styles.modeDescriptionActive,
+                  ]}
+                >
+                  Money Transfer
+                </Text>
+              </TouchableOpacity>
 
-            <View style={styles.footerRow}>
-              <AnimatedTouchable
+              <TouchableOpacity
                 style={[
-                  styles.btn,
-                  styles.btnSecondary,
-                  { transform: [{ scale: resetScale }] },
+                  styles.modeBtn,
+                  mode === "deal" && styles.modeBtnActive,
                 ]}
-                onPressIn={() =>
-                  Animated.timing(resetScale, {
-                    toValue: 0.95,
-                    duration: 100,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                onPressOut={() =>
-                  Animated.timing(resetScale, {
-                    toValue: 1,
-                    duration: 100,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                onPress={resetAll}
-                disabled={submitting}
+                onPress={() => setMode("deal")}
               >
-                <Text style={styles.btnTextSecondary}>Reset</Text>
-              </AnimatedTouchable>
+                <Ionicons
+                  name="business-outline"
+                  size={24}
+                  color={mode === "deal" ? colors.textWhite : colors.primary}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text
+                  style={[
+                    styles.modeText,
+                    mode === "deal" && styles.modeTextActive,
+                  ]}
+                >
+                  Deal Entry
+                </Text>
+                <Text
+                  style={[
+                    styles.modeDescription,
+                    mode === "deal" && styles.modeDescriptionActive,
+                  ]}
+                >
+                  Property Deals
+                </Text>
+              </TouchableOpacity>
 
-              <AnimatedTouchable
+              <TouchableOpacity
                 style={[
-                  styles.btn,
-                  canSubmit ? styles.btnPrimary : styles.btnDisabled,
-                  { transform: [{ scale: submitScale }] },
+                  styles.modeBtn,
+                  mode === "tracker" && styles.modeBtnActive,
                 ]}
-                onPressIn={() =>
-                  Animated.timing(submitScale, {
-                    toValue: 0.95,
-                    duration: 100,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                onPressOut={() =>
-                  Animated.timing(submitScale, {
-                    toValue: 1,
-                    duration: 100,
-                    useNativeDriver: true,
-                  }).start()
-                }
-                onPress={submit}
-                disabled={!canSubmit || submitting}
+                onPress={() => setMode("tracker")}
               >
-                {submitting ? (
-                  <ActivityIndicator color={colors.btnTextPrimary} />
-                ) : (
-                  <Text style={styles.btnTextPrimary}>Submit</Text>
-                )}
-              </AnimatedTouchable>
+                <Ionicons
+                  name="search-outline"
+                  size={24}
+                  color={mode === "tracker" ? colors.textWhite : colors.primary}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text
+                  style={[
+                    styles.modeText,
+                    mode === "tracker" && styles.modeTextActive,
+                  ]}
+                >
+                  Tracker
+                </Text>
+                <Text
+                  style={[
+                    styles.modeDescription,
+                    mode === "tracker" && styles.modeDescriptionActive,
+                  ]}
+                >
+                  Search Records
+                </Text>
+              </TouchableOpacity>
             </View>
-          </Animated.View>
-        )}
+          </View>
 
-        {/* TRACKER UI */}
-        {mode === "tracker" && (
-          <Animated.View
-            style={[
-              styles.form,
-              {
-                opacity: formOpacity,
-                transform: [{ translateY: formTranslateY }],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Tracker</Text>
+          {!mode && (
+            <Text style={styles.noModeText}>Choose an option to start.</Text>
+          )}
 
-            <Text style={styles.label}>Search / Select Name</Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
+          {/* Regular form (unchanged) */}
+          {mode === "regular" && (
+            <Animated.View
+              style={[
+                styles.form,
+                {
+                  opacity: formOpacity,
+                  transform: [{ translateY: formTranslateY }],
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>Regular Entry</Text>
+
+              <Text style={styles.label}>Sender Name</Text>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                value={trackerQuery}
-                onChangeText={setTrackerQuery}
-                placeholder="Type name e.g., Ramesh"
+                style={[styles.input, { borderColor: colors.border }]}
+                value={senderName}
+                onChangeText={setSenderName}
+                placeholder="e.g., Rohan Verma"
                 placeholderTextColor={colors.textSecondary}
               />
-              <TouchableOpacity
-                style={[
-                  styles.btn,
-                  styles.btnSecondary,
-                  { paddingHorizontal: 12, alignSelf: "center" },
-                ]}
-                onPress={() => {
-                  // ensure suggestions are loaded when dropdown opens
-                  setShowSuggestionsModal(true);
-                  fetchSuggestions();
-                }}
-              >
-                {trackerLoading ? (
-                  <ActivityIndicator />
-                ) : (
-                  <Text style={styles.btnTextSecondary}>Dropdown</Text>
-                )}
-              </TouchableOpacity>
-            </View>
 
-            <View style={{ flexDirection: "row", marginTop: 12 }}>
-              <TouchableOpacity
-                style={[styles.btn, styles.btnPrimary, { marginRight: 8 }]}
-                onPress={() => fetchTracker(trackerQuery)}
-              >
-                {trackerLoading ? (
-                  <ActivityIndicator color={colors.btnTextPrimary} />
-                ) : (
-                  <Text style={styles.btnTextPrimary}>Search</Text>
-                )}
-              </TouchableOpacity>
+              <Text style={styles.label}>Receiver Name</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border }]}
+                value={receiverName}
+                onChangeText={setReceiverName}
+                placeholder="e.g., Aman Singh"
+                placeholderTextColor={colors.textSecondary}
+              />
 
-              <TouchableOpacity
-                style={[styles.btn, styles.btnSecondary]}
-                onPress={() => {
-                  setTrackerQuery("");
-                  setTrackerResults([]);
-                }}
-              >
-                <Text style={styles.btnTextSecondary}>Clear</Text>
-              </TouchableOpacity>
-            </View>
+              <Text style={styles.label}>Amount Transferred</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border }]}
+                value={amountTransferred}
+                onChangeText={(t) =>
+                  setAmountTransferred(t.replace(/[^\d.]/g, ""))
+                }
+                keyboardType="decimal-pad"
+                placeholder="e.g., 1500"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </Animated.View>
+          )}
 
-            <View style={{ marginTop: 20 }}>
-              {trackerLoading ? (
-                <ActivityIndicator />
-              ) : trackerResults.length === 0 ? (
-                <Text style={{ color: colors.textSecondary }}>
-                  No results yet. Try search or pick from dropdown.
+          {/* Deal form (unchanged) */}
+          {mode === "deal" && (
+            <Animated.View
+              style={[
+                styles.form,
+                {
+                  opacity: formOpacity,
+                  transform: [{ translateY: formTranslateY }],
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>Deal Entry</Text>
+
+              <Text style={styles.label}>Dealer Name</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border }]}
+                value={dealer}
+                onChangeText={setDealer}
+                placeholder="e.g., M/S Sharma Traders"
+                placeholderTextColor={colors.textSecondary}
+              />
+
+              <Text style={styles.label}>Customer Name</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border }]}
+                value={customer}
+                onChangeText={setCustomer}
+                placeholder="e.g., Rahul Jain"
+                placeholderTextColor={colors.textSecondary}
+              />
+
+              <Text style={styles.label}>Amount</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border }]}
+                value={amount}
+                onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ""))}
+                keyboardType="decimal-pad"
+                placeholder="e.g., 25000"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </Animated.View>
+          )}
+
+          {/* Shared fields for regular/deal */}
+          {mode && mode !== "tracker" && (
+            <Animated.View
+              style={{
+                width: "100%",
+                opacity: formOpacity,
+                transform: [{ translateY: formTranslateY }],
+              }}
+            >
+              <Text style={styles.label}>Deal Date</Text>
+              <TouchableOpacity
+                style={[styles.input, styles.datePickerButton]}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateText}>
+                  {formatDateDisplay(dealDate)}
                 </Text>
-              ) : (
-                <FlatList
-                  data={trackerResults}
-                  keyExtractor={(_, i) => String(i)}
-                  renderItem={renderResultItem}
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={dealDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event: any, selectedDate?: Date) => {
+                    setShowDatePicker(Platform.OS === "ios");
+                    if (selectedDate) setDealDate(selectedDate);
+                  }}
                 />
               )}
-            </View>
-          </Animated.View>
-        )}
 
-        {/* Suggestions modal */}
-        <Modal
-          visible={showSuggestionsModal}
-          animationType="slide"
-          onRequestClose={() => setShowSuggestionsModal(false)}
-        >
-          <View style={[styles.container, { paddingTop: 30 }]}>
-            <Text style={styles.sectionTitle}>Select Name</Text>
-            {trackerLoading ? (
-              <ActivityIndicator />
-            ) : suggestions.length === 0 ? (
-              <Text style={{ color: colors.textSecondary }}>
-                No suggestions available.
-              </Text>
-            ) : (
-              <ScrollView style={{ width: "100%" }}>
-                {suggestions.map((s) => (
+              <Text style={styles.label}>Status</Text>
+              <View style={styles.chipRow}>
+                {STATUS_OPTIONS.map((opt) => (
                   <TouchableOpacity
-                    key={s}
-                    style={{
-                      padding: 12,
-                      borderBottomWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                    onPress={() => {
-                      setTrackerQuery(s);
-                      setShowSuggestionsModal(false);
-                    }}
+                    key={opt}
+                    onPress={() => setStatus(opt)}
+                    style={[
+                      styles.chip,
+                      status === opt && [
+                        styles.chipActive,
+                        {
+                          backgroundColor: getStatusColor(opt),
+                          borderColor: getStatusColor(opt),
+                        },
+                      ],
+                    ]}
                   >
-                    <Text style={{ fontSize: 16 }}>{s}</Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        status === opt && styles.chipTextActive,
+                      ]}
+                    >
+                      {opt}
+                    </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            )}
+              </View>
 
-            <TouchableOpacity
+              <View style={styles.footerRow}>
+                <AnimatedTouchable
+                  style={[
+                    styles.btn,
+                    styles.btnSecondary,
+                    { transform: [{ scale: resetScale }] },
+                  ]}
+                  onPressIn={() =>
+                    Animated.timing(resetScale, {
+                      toValue: 0.95,
+                      duration: 100,
+                      useNativeDriver: true,
+                    }).start()
+                  }
+                  onPressOut={() =>
+                    Animated.timing(resetScale, {
+                      toValue: 1,
+                      duration: 100,
+                      useNativeDriver: true,
+                    }).start()
+                  }
+                  onPress={resetAll}
+                  disabled={submitting}
+                >
+                  <Text style={styles.btnTextSecondary}>Reset</Text>
+                </AnimatedTouchable>
+
+                <AnimatedTouchable
+                  style={[
+                    styles.btn,
+                    canSubmit ? styles.btnPrimary : styles.btnDisabled,
+                    { transform: [{ scale: submitScale }] },
+                  ]}
+                  onPressIn={() =>
+                    Animated.timing(submitScale, {
+                      toValue: 0.95,
+                      duration: 100,
+                      useNativeDriver: true,
+                    }).start()
+                  }
+                  onPressOut={() =>
+                    Animated.timing(submitScale, {
+                      toValue: 1,
+                      duration: 100,
+                      useNativeDriver: true,
+                    }).start()
+                  }
+                  onPress={submit}
+                  disabled={!canSubmit || submitting}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color={colors.textWhite} />
+                  ) : (
+                    <Text style={styles.btnTextPrimary}>Submit</Text>
+                  )}
+                </AnimatedTouchable>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* ENHANCED TRACKER UI */}
+          {mode === "tracker" && (
+            <Animated.View
               style={[
-                styles.btnSecondary,
-                styles.closeButton,
-                { marginTop: 16 },
+                styles.form,
+                {
+                  opacity: formOpacity,
+                  transform: [{ translateY: formTranslateY }],
+                },
               ]}
-              onPress={() => setShowSuggestionsModal(false)}
             >
-              <Text style={styles.btnTextSecondary}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </Modal>
-      </View>
-    </KeyboardAvoidingView>
+              <View style={styles.trackerHeader}>
+                <Ionicons name="search" size={28} color={colors.primary} />
+                <Text style={styles.sectionTitle}>Property Tracker</Text>
+              </View>
+
+              <Text style={styles.label}>
+                <Ionicons
+                  name="person-outline"
+                  size={16}
+                  color={colors.textPrimary}
+                />{" "}
+                Search Name
+              </Text>
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={[styles.input, styles.searchInput]}
+                  value={trackerQuery}
+                  onChangeText={setTrackerQuery}
+                  placeholder="Type name e.g., Ramesh Kumar"
+                  placeholderTextColor={colors.textSecondary}
+                />
+                <TouchableOpacity
+                  style={styles.dropdownBtn}
+                  onPress={() => {
+                    setShowSuggestionsModal(true);
+                    fetchSuggestions();
+                  }}
+                >
+                  {trackerLoading ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Ionicons
+                      name="chevron-down"
+                      size={20}
+                      color={colors.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.trackerBtnRow}>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnPrimary, styles.searchBtn]}
+                  onPress={() => fetchTracker(trackerQuery)}
+                >
+                  {trackerLoading ? (
+                    <ActivityIndicator color={colors.textWhite} />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="search"
+                        size={16}
+                        color={colors.textWhite}
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={styles.btnTextPrimary}>Search</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnSecondary, styles.clearBtn]}
+                  onPress={() => {
+                    setTrackerQuery("");
+                    setTrackerResults([]);
+                  }}
+                >
+                  <Ionicons
+                    name="refresh"
+                    size={16}
+                    color={colors.textPrimary}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={styles.btnTextSecondary}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.resultsSection}>
+                {trackerLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <Text style={styles.loadingText}>Searching records...</Text>
+                  </View>
+                ) : trackerResults.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons
+                      name="document-outline"
+                      size={48}
+                      color={colors.textLight}
+                    />
+                    <Text style={styles.emptyStateText}>No records found</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                      Try searching with a different name or use the dropdown to
+                      select from available options
+                    </Text>
+                  </View>
+                ) : (
+                  <View>
+                    <View style={styles.resultsHeader}>
+                      <Text style={styles.resultsCount}>
+                        {trackerResults.length} record
+                        {trackerResults.length !== 1 ? "s" : ""} found
+                      </Text>
+                    </View>
+                    <FlatList
+                      data={trackerResults}
+                      keyExtractor={(_, i) => String(i)}
+                      renderItem={renderResultItem}
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ paddingBottom: 20 }}
+                    />
+                  </View>
+                )}
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Enhanced Suggestions Modal */}
+          <Modal
+            visible={showSuggestionsModal}
+            animationType="slide"
+            onRequestClose={() => setShowSuggestionsModal(false)}
+            presentationStyle="pageSheet"
+          >
+            <LinearGradient
+              colors={[colors.cardBackground, colors.background]}
+              style={{ flex: 1 }}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalHeaderContent}>
+                    <Ionicons
+                      name="people-outline"
+                      size={24}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.modalTitle}>Select Name</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.modalCloseBtn}
+                    onPress={() => setShowSuggestionsModal(false)}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={24}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.modalContent}>
+                  {trackerLoading ? (
+                    <View style={styles.modalLoading}>
+                      <ActivityIndicator size="large" color={colors.primary} />
+                      <Text style={styles.modalLoadingText}>
+                        Loading suggestions...
+                      </Text>
+                    </View>
+                  ) : suggestions.length === 0 ? (
+                    <View style={styles.modalEmpty}>
+                      <Ionicons
+                        name="person-add-outline"
+                        size={48}
+                        color={colors.textLight}
+                      />
+                      <Text style={styles.modalEmptyText}>
+                        No suggestions available
+                      </Text>
+                      <Text style={styles.modalEmptySubtext}>
+                        Start typing to search or add new entries
+                      </Text>
+                    </View>
+                  ) : (
+                    <ScrollView
+                      style={styles.suggestionsList}
+                      showsVerticalScrollIndicator={false}
+                    >
+                      {suggestions.map((s, index) => (
+                        <TouchableOpacity
+                          key={s}
+                          style={[
+                            styles.suggestionItem,
+                            index === suggestions.length - 1 && {
+                              borderBottomWidth: 0,
+                            },
+                          ]}
+                          onPress={() => {
+                            setTrackerQuery(s);
+                            setShowSuggestionsModal(false);
+                          }}
+                        >
+                          <View style={styles.suggestionContent}>
+                            <Ionicons
+                              name="person-outline"
+                              size={20}
+                              color={colors.primary}
+                            />
+                            <Text style={styles.suggestionText}>{s}</Text>
+                          </View>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={16}
+                            color={colors.textLight}
+                          />
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              </View>
+            </LinearGradient>
+          </Modal>
+
+          {/* IMPRESSIVE SUCCESS POPUP */}
+          <Modal
+            visible={showSuccessPopup}
+            transparent={true}
+            animationType="none"
+            onRequestClose={() => setShowSuccessPopup(false)}
+          >
+            <View style={styles.successOverlay}>
+              <Animated.View
+                style={[
+                  styles.successPopup,
+                  {
+                    opacity: popupOpacity,
+                    transform: [{ scale: popupScale }],
+                  },
+                ]}
+              >
+                {/* Background Gradient */}
+                <LinearGradient
+                  colors={[colors.success, colors.primaryLight]}
+                  style={styles.successGradient}
+                >
+                  {/* Confetti Animation */}
+                  <Animated.View
+                    style={[
+                      styles.confettiContainer,
+                      { opacity: confettiOpacity },
+                    ]}
+                  >
+                    {[...Array(12)].map((_, i) => (
+                      <Animated.View
+                        key={i}
+                        style={[
+                          styles.confettiPiece,
+                          {
+                            left: `${i * 8 + 10}%`,
+                            backgroundColor:
+                              i % 3 === 0
+                                ? colors.accentLight
+                                : i % 3 === 1
+                                ? colors.textWhite
+                                : colors.primaryLight,
+                            transform: [
+                              {
+                                translateY: confettiOpacity.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [-50, 200],
+                                }),
+                              },
+                              {
+                                rotate: confettiOpacity.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: ["0deg", "360deg"],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    ))}
+                  </Animated.View>
+
+                  {/* Main Content */}
+                  <View style={styles.successContent}>
+                    {/* Animated Checkmark */}
+                    <Animated.View
+                      style={[
+                        styles.checkmarkContainer,
+                        { transform: [{ scale: checkmarkScale }] },
+                      ]}
+                    >
+                      <View style={styles.checkmarkCircle}>
+                        <Ionicons
+                          name="checkmark"
+                          size={40}
+                          color={colors.textWhite}
+                        />
+                      </View>
+                    </Animated.View>
+
+                    {/* Success Text */}
+                    <Text style={styles.successTitle}>Entry Submitted ✅</Text>
+                    <Text style={styles.successSubtitle}>
+                      Your data has been saved successfully!
+                    </Text>
+
+                    {/* Decorative Elements */}
+                    <View style={styles.successDivider} />
+
+                    <View style={styles.successBadge}>
+                      <Ionicons
+                        name="cloud-done-outline"
+                        size={20}
+                        color={colors.success}
+                      />
+                      <Text style={styles.successBadgeText}>
+                        Synced to Cloud
+                      </Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </Animated.View>
+            </View>
+          </Modal>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    paddingTop: 40,
-    backgroundColor: colors.background,
-    minHeight: "100%",
+  // Hero Section Styles
+  heroBackground: {
+    height: 280,
+    justifyContent: "center",
     alignItems: "center",
   },
-  title: {
-    fontSize: 28,
+  heroImage: {
+    opacity: 0.8,
+  },
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  heroContent: {
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  heroTextContainer: {
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 20,
+    padding: 24,
+    backdropFilter: "blur(10px)",
+  },
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: colors.textWhite,
+    textAlign: "center",
+    marginBottom: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  heroSubtitle: {
+    fontSize: 18,
+    color: colors.textWhite,
+    textAlign: "center",
+    opacity: 0.9,
+    marginBottom: 12,
+  },
+  heroDivider: {
+    width: 60,
+    height: 3,
+    backgroundColor: colors.accentLight,
+    borderRadius: 2,
+    marginBottom: 12,
+  },
+  heroDescription: {
+    fontSize: 14,
+    color: colors.textWhite,
+    textAlign: "center",
+    opacity: 0.8,
+    lineHeight: 20,
+  },
+
+  // Main Container
+  container: {
+    flex: 1,
+    backgroundColor: colors.cardBackground,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+
+  // Mode Section
+  modeSection: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  sectionHeader: {
+    fontSize: 20,
     fontWeight: "bold",
     color: colors.textPrimary,
-    marginBottom: 20,
-    letterSpacing: 0.5,
+    marginBottom: 16,
+    textAlign: "center",
   },
   modeRow: {
     flexDirection: "row",
     gap: 12,
-    width: "100%",
     justifyContent: "center",
-    marginBottom: 20,
   },
   modeBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: colors.border,
-    backgroundColor: colors.inputBg,
+    backgroundColor: colors.cardBackground,
+    alignItems: "center",
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modeBtnActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+    transform: [{ scale: 1.02 }],
   },
-  modeText: { fontWeight: "600", color: colors.textPrimary },
-  modeTextActive: { color: colors.btnTextPrimary },
-  noModeText: { marginTop: 6, color: colors.textSecondary, fontSize: 16 },
+  modeText: {
+    fontWeight: "700",
+    color: colors.textPrimary,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  modeTextActive: { color: colors.textWhite },
+  modeDescription: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 4,
+    opacity: 0.8,
+  },
+  modeDescriptionActive: {
+    color: colors.textWhite,
+    opacity: 0.9,
+  },
+  noModeText: {
+    marginTop: 16,
+    color: colors.textSecondary,
+    fontSize: 16,
+    textAlign: "center",
+    fontStyle: "italic",
+  },
 
-  form: { width: "100%" },
+  // Form Styles
+  form: {
+    width: "100%",
+    backgroundColor: colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 12,
+    marginBottom: 20,
     color: colors.primary,
+    textAlign: "center",
   },
 
   label: {
     marginTop: 16,
     marginBottom: 8,
-    color: colors.textSecondary,
-    fontWeight: "500",
+    color: colors.textPrimary,
+    fontWeight: "600",
+    fontSize: 16,
   },
   input: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
     backgroundColor: colors.inputBg,
     borderColor: colors.border,
+    fontSize: 16,
+    color: colors.textPrimary,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
-  datePickerButton: { justifyContent: "center" },
-  dateText: { color: colors.textPrimary, fontSize: 16 },
+  datePickerButton: {
+    justifyContent: "center",
+    backgroundColor: colors.inputBg,
+  },
+  dateText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "500",
+  },
 
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 16,
+    gap: 12,
+    marginTop: 12,
+    marginBottom: 20,
+    justifyContent: "center",
   },
   chip: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    borderWidth: 2,
     borderColor: colors.border,
     backgroundColor: colors.chipBg,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  chipActive: { borderColor: colors.primary },
-  chipText: { color: colors.chipText, fontWeight: "600" },
-  chipTextActive: { color: colors.chipTextActive },
+  chipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+    transform: [{ scale: 1.05 }],
+  },
+  chipText: {
+    color: colors.chipText,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  chipTextActive: { color: colors.textWhite },
 
   footerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 16,
-    marginTop: 24,
+    marginTop: 32,
     marginBottom: 20,
   },
 
-  btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center" },
-  btnPrimary: { backgroundColor: colors.btnPrimary },
+  btn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnPrimary: {
+    backgroundColor: colors.primary,
+  },
   btnDisabled: { backgroundColor: colors.disabled },
   btnSecondary: {
-    backgroundColor: colors.btnSecondary,
-    borderWidth: 1,
-    borderColor: colors.btnSecondaryBorder,
+    backgroundColor: colors.cardBackground,
+    borderWidth: 2,
+    borderColor: colors.border,
   },
-  btnTextPrimary: { color: colors.btnTextPrimary, fontWeight: "bold" },
-  btnTextSecondary: { color: colors.btnTextSecondary, fontWeight: "600" },
+  btnTextPrimary: {
+    color: colors.textWhite,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  btnTextSecondary: {
+    color: colors.textPrimary,
+    fontWeight: "600",
+    fontSize: 16,
+  },
+
+  // Tracker Styles
+  trackerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    gap: 12,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+  },
+  dropdownBtn: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.inputBg,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  trackerBtnRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  searchBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Results Section
+  resultsSection: {
+    marginTop: 24,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: colors.textSecondary,
+    fontSize: 16,
+  },
+  emptyState: {
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  resultsHeader: {
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  resultsCount: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.primary,
+  },
 
   closeButton: {
     paddingVertical: 12,
@@ -1221,15 +1966,223 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
 
+  // Premium Result Cards
   resultCard: {
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: colors.inputBg,
-    marginBottom: 10,
+    backgroundColor: colors.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  resultType: { fontWeight: "700", color: colors.primary },
-  resultLine: { marginTop: 6, color: colors.textPrimary },
-  resultBold: { fontWeight: "700" },
+  resultType: {
+    fontWeight: "800",
+    color: colors.primary,
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  resultLine: {
+    marginTop: 8,
+    color: colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  resultBold: {
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
+  // Premium Modal Styles
+  modalContainer: {
+    flex: 1,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  modalHeaderContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: colors.textPrimary,
+  },
+  modalCloseBtn: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: colors.chipBg,
+  },
+  modalContent: {
+    flex: 1,
+  },
+  modalLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  modalLoadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  modalEmpty: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  modalEmptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginTop: 16,
+    textAlign: "center",
+  },
+  modalEmptySubtext: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginTop: 8,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  suggestionsList: {
+    flex: 1,
+  },
+  suggestionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.cardBackground,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suggestionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  suggestionText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: colors.textPrimary,
+  },
+
+  // IMPRESSIVE SUCCESS POPUP STYLES
+  successOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  successPopup: {
+    width: width * 0.85,
+    borderRadius: 24,
+    overflow: "hidden",
+    shadowColor: colors.textPrimary,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.25,
+    shadowRadius: 25,
+    elevation: 15,
+  },
+  successGradient: {
+    paddingVertical: 40,
+    paddingHorizontal: 30,
+    alignItems: "center",
+    position: "relative",
+  },
+  confettiContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: "hidden",
+  },
+  confettiPiece: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  successContent: {
+    alignItems: "center",
+    zIndex: 1,
+  },
+  checkmarkContainer: {
+    marginBottom: 20,
+  },
+  checkmarkCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: colors.textWhite,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: colors.textWhite,
+    textAlign: "center",
+    marginBottom: 12,
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: colors.textWhite,
+    textAlign: "center",
+    opacity: 0.9,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  successDivider: {
+    width: 60,
+    height: 3,
+    backgroundColor: colors.textWhite,
+    borderRadius: 2,
+    marginBottom: 20,
+    opacity: 0.8,
+  },
+  successBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  successBadgeText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.success,
+  },
 });
