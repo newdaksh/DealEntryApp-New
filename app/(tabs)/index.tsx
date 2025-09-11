@@ -16,7 +16,6 @@ import { RegularForm } from "../../components/RegularForm";
 import { SharedFormFields } from "../../components/SharedFormFields";
 import SplashAnimation from "../../components/SplashAnimation"; // ✅ include splash
 import SubmitSuccessModal from "../../components/SubmitSuccessModal";
-import { SuccessModal } from "../../components/SuccessModal";
 import { TrackerComponent } from "../../components/TrackerComponent";
 import {
   DealFormData,
@@ -440,15 +439,6 @@ export default function App() {
           </ScrollView>
         )}
       </KeyboardAvoidingView>
-
-      <SuccessModal
-        visible={showSuccessPopup}
-        popupOpacity={popupOpacity}
-        popupScale={popupScale}
-        checkmarkScale={checkmarkScale}
-        confettiOpacity={confettiOpacity}
-        onRequestClose={() => setShowSuccessPopup(false)}
-      />
 
       <SubmitSuccessModal
         visible={showSuccessPopup}
