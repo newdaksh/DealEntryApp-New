@@ -21,7 +21,7 @@ export function HomeButton({
   return (
     <View style={styles.homeFooter} pointerEvents="box-none">
       <LinearGradient
-        colors={colors.primaryGradient}
+        colors={colors.splashGradient as [string, string, ...string[]]}
         style={styles.homeButtonGradient}
       >
         <TouchableOpacity

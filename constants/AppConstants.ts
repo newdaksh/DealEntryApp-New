@@ -16,44 +16,7 @@ export type Status = (typeof STATUS_OPTIONS)[number];
 
 export const { width, height } = Dimensions.get("window");
 
-export const colors = {
-  // Premium Real Estate Color Palette
-  background: "#0a0e13",
-  backgroundLight: "#1a1f26",
-  cardBackground: "#ffffff",
-  textPrimary: "#1a202c",
-  textSecondary: "#4a5568",
-  textLight: "#a0aec0",
-  textWhite: "#ffffff",
-
-  // Brand Colors
-  primary: "#2b6cb0", // Professional Blue
-  primaryLight: "#3182ce",
-  primaryDark: "#2c5282",
-  accent: "#d69e2e", // Gold Accent
-  accentLight: "#ecc94b",
-
-  // Status Colors
-  success: "#38a169",
-  warning: "#d69e2e",
-  error: "#e53e3e",
-  info: "#3182ce",
-
-  // UI Colors
-  border: "#e2e8f0",
-  borderLight: "#f7fafc",
-  inputBg: "#ffffff",
-  chipBg: "#f7fafc",
-  chipText: "#4a5568",
-  chipTextActive: "#ffffff",
-  disabled: "#cbd5e0",
-
-  // Gradients
-  primaryGradient: ["#2b6cb0", "#3182ce"] as const,
-  accentGradient: ["#d69e2e", "#ecc94b"] as const,
-  heroGradient: ["rgba(43, 108, 176, 0.9)", "rgba(49, 130, 206, 0.8)"] as const,
-  cardGradient: ["#ffffff", "#f8fafc"] as const,
-};
+// Removed duplicate colors export to fix redeclaration error.
 
 // Form field interface types
 export interface RegularFormData {
@@ -85,3 +48,32 @@ export interface NormalizedResult {
   status: string;
   __raw?: any;
 }
+
+export const colors = {
+  background: "#F8FAFC",
+  backgroundLight: "#FFFFFF",
+  cardBackground: "#FFFFFF",
+  textPrimary: "#1E293B",
+  textSecondary: "#64748B",
+  textLight: "#94A3B8",
+  textWhite: "#FFF",
+  primary: "#2563EB",
+  primaryLight: "#60A5FA",
+  accent: "#F59E0B",
+  accentLight: "#FCD34D",
+  error: "#DC2626",
+  warning: "#F59E0B",
+  info: "#0EA5E9",
+  success: "#10B981",
+  border: "#E2E8F0",
+  divider: "#F1F5F9",
+  overlay: "rgba(0,0,0,0.4)",
+  cardGradient: ["#FFFFFF", "#F8FAFC"],
+  splashGradient: ["#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"] as [
+    string,
+    string,
+    ...string[]
+  ],
+  // Light theme colors
+  inputBg: "#F1F5F9",
+}; // Add your desired splash gradient colors here
