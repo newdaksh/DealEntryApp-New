@@ -537,8 +537,8 @@ const styles = StyleSheet.create({
   },
   heroTitleAccent: {
     fontSize: 28,
-    fontWeight: "600",
-    color: colors.accentLight,
+    fontWeight: "700",
+    color: "#3127F5",
     textAlign: "center",
     letterSpacing: 4,
     marginTop: 5,
