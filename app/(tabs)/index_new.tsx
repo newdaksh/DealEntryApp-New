@@ -265,6 +265,8 @@ export default function App() {
     }
   }
 
+  
+
   // When user opens tracker mode, load suggestions
   useEffect(() => {
     if (mode === "tracker") fetchSuggestions();
@@ -324,70 +326,17 @@ export default function App() {
         behavior={Platform.select({ ios: "padding", android: undefined })}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={
-            !isHomeScreen ? styles.containerWithHomeButton : undefined
-          }
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Modern Mode Selector */}
-          <ModeSelector mode={mode} onSelectMode={selectMode} />
+        {mode === "tracker" ? (
+          <View
+            style={[
+              styles.container,
+              !isHomeScreen ? styles.containerWithHomeButton : undefined,
+            ]}
+          >
+            {/* Modern Mode Selector */}
+            <ModeSelector mode={mode} onSelectMode={selectMode} />
 
-          {!mode && (
-            <Text style={styles.noModeText}>Choose an option to start.</Text>
-          )}
-
-          {/* Regular form */}
-          {mode === "regular" && (
-            <RegularForm
-              data={regularData}
-              onUpdateData={(updatedData) =>
-                setRegularData({ ...regularData, ...updatedData })
-              }
-              formOpacity={formOpacity}
-              formTranslateY={formTranslateY}
-            />
-          )}
-
-          {/* Deal form */}
-          {mode === "deal" && (
-            <DealForm
-              data={dealData}
-              onUpdateData={(updatedData) =>
-                setDealData({ ...dealData, ...updatedData })
-              }
-              formOpacity={formOpacity}
-              formTranslateY={formTranslateY}
-            />
-          )}
-
-          {/* Shared fields for regular/deal */}
-          {mode && mode !== "tracker" && (
-            <SharedFormFields
-              data={sharedData}
-              onUpdateData={(updatedData) =>
-                setSharedData({ ...sharedData, ...updatedData })
-              }
-              showDatePicker={showDatePicker}
-              onToggleDatePicker={setShowDatePicker}
-              formOpacity={formOpacity}
-              formTranslateY={formTranslateY}
-              canSubmit={canSubmit}
-              onSubmit={submit}
-              onReset={resetAll}
-              submitting={submitting}
-              submitScale={submitScale}
-              resetScale={resetScale}
-              onPressInSubmit={handlePressInSubmit}
-              onPressOutSubmit={handlePressOutSubmit}
-              onPressInReset={handlePressInReset}
-              onPressOutReset={handlePressOutReset}
-            />
-          )}
-
-          {/* ENHANCED TRACKER UI */}
-          {mode === "tracker" && (
+            {/* ENHANCED TRACKER UI */}
             <TrackerComponent
               trackerQuery={trackerQuery}
               setTrackerQuery={setTrackerQuery}
@@ -400,9 +349,73 @@ export default function App() {
               onFetchSuggestions={fetchSuggestions}
               formOpacity={formOpacity}
               formTranslateY={formTranslateY}
+              setTrackerResults={setTrackerResults}
             />
-          )}
-        </ScrollView>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={
+              !isHomeScreen ? styles.containerWithHomeButton : undefined
+            }
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Modern Mode Selector */}
+            <ModeSelector mode={mode} onSelectMode={selectMode} />
+
+            {!mode && (
+              <Text style={styles.noModeText}>Choose an option to start.</Text>
+            )}
+
+            {/* Regular form */}
+            {mode === "regular" && (
+              <RegularForm
+                data={regularData}
+                onUpdateData={(updatedData) =>
+                  setRegularData({ ...regularData, ...updatedData })
+                }
+                formOpacity={formOpacity}
+                formTranslateY={formTranslateY}
+              />
+            )}
+
+            {/* Deal form */}
+            {mode === "deal" && (
+              <DealForm
+                data={dealData}
+                onUpdateData={(updatedData) =>
+                  setDealData({ ...dealData, ...updatedData })
+                }
+                formOpacity={formOpacity}
+                formTranslateY={formTranslateY}
+              />
+            )}
+
+            {/* Shared fields for regular/deal */}
+            {(mode === "regular" || mode === "deal") && (
+              <SharedFormFields
+                data={sharedData}
+                onUpdateData={(updatedData) =>
+                  setSharedData({ ...sharedData, ...updatedData })
+                }
+                showDatePicker={showDatePicker}
+                onToggleDatePicker={setShowDatePicker}
+                formOpacity={formOpacity}
+                formTranslateY={formTranslateY}
+                canSubmit={canSubmit}
+                onSubmit={submit}
+                onReset={resetAll}
+                submitting={submitting}
+                submitScale={submitScale}
+                resetScale={resetScale}
+                onPressInSubmit={handlePressInSubmit}
+                onPressOutSubmit={handlePressOutSubmit}
+                onPressInReset={handlePressInReset}
+                onPressOutReset={handlePressOutReset}
+              />
+            )}
+          </ScrollView>
+        )}
       </KeyboardAvoidingView>
 
       {/* Success Modal */}
