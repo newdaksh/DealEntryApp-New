@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "module": "ESNext",
+    "forceConsistentCasingInFileNames": true,
     "paths": {
       "@/*": [
         "./*"

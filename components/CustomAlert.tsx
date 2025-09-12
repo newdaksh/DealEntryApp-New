@@ -59,7 +59,7 @@ const getAlertTheme = (type: AlertType) => {
 
 const { width: screenWidth } = Dimensions.get("window");
 
-export const CustomAlert: React.FC<CustomAlertProps> = ({
+export const CustomAlert = ({
   visible,
   title,
   message,
@@ -69,7 +69,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   buttonText = "OK",
   buttonColor,
   onClose,
-}) => {
+}: CustomAlertProps): React.JSX.Element | null => {
   const theme = getAlertTheme(type);
   const finalIcon = icon || theme.icon;
   const finalIconColor = iconColor || theme.iconColor;
