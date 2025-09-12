@@ -199,27 +199,34 @@ export class ApiService {
     }
   }
 
-  // Fetch combined results for a given name q (case-insensitive)
-  static async fetchTracker(q: string): Promise<NormalizedResult[]> {
-    if (!q || !q.trim()) {
-      // Return empty array, let the UI component handle the validation
+  // Fetch combined results for a given name q (case-insensitive) or by date.
+  // If both q and date are provided, the backend will apply both filters.
+  static async fetchTracker(
+    q?: string | null,
+    date?: string | null
+  ): Promise<NormalizedResult[]> {
+    // If neither query nor date provided -> nothing to search
+    if ((!q || !q.trim()) && (!date || !date.trim())) {
       return [];
     }
 
     try {
       const authHeader = this.getAuthHeader();
 
-      // GET /tracker?q=name
-      const res = await fetch(
-        `${WEBHOOK_URL_FULL}?path=tracker&q=${encodeURIComponent(q.trim())}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(authHeader ? { Authorization: authHeader } : {}),
-          },
-        }
-      );
+      // Build query params
+      const params: string[] = ["path=tracker"];
+      if (q && q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
+      if (date && date.trim()) params.push(`date=${encodeURIComponent(date.trim())}`);
+
+      const url = `${WEBHOOK_URL_FULL}?${params.join("&")}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+      });
 
       if (!res.ok) {
         const txt = await res.text();
@@ -271,7 +278,6 @@ export class ApiService {
           } else if (upstream && Array.isArray(upstream.rows)) {
             results = upstream.rows;
           } else if (typeof upstream === "object" && upstream !== null) {
-            // maybe single object -> wrap
             results = [upstream];
           }
         } catch (e) {

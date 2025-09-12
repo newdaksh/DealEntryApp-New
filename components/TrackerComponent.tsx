@@ -10,23 +10,28 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { NormalizedResult, colors } from "../constants/AppConstants";
 import { useCustomAlert } from "../hooks/useCustomAlert";
 import { styles } from "../styles/AppStyles";
 import { getStatusColor } from "../utils/AppUtils";
 import { CustomAlert } from "./CustomAlert";
+import { useState } from "react";
 
 interface TrackerComponentProps {
   trackerQuery: string;
   setTrackerQuery: (query: string) => void;
+  trackerDate: Date | null;
+  setTrackerDate: (d: Date | null) => void;
   trackerLoading: boolean;
   trackerResults: NormalizedResult[];
   setTrackerResults: (results: NormalizedResult[]) => void;
   suggestions: string[];
   showSuggestionsModal: boolean;
   setShowSuggestionsModal: (show: boolean) => void;
-  onFetchTracker: (query: string) => void;
+  onFetchTracker: (query: string, date?: Date | null) => void;
   onFetchSuggestions: () => void;
   formOpacity: Animated.Value;
   formTranslateY: Animated.Value;
@@ -35,6 +40,8 @@ interface TrackerComponentProps {
 export function TrackerComponent({
   trackerQuery,
   setTrackerQuery,
+  trackerDate,
+  setTrackerDate,
   trackerLoading,
   trackerResults,
   suggestions,
@@ -47,17 +54,33 @@ export function TrackerComponent({
   formTranslateY,
 }: TrackerComponentProps) {
   const { alertConfig, isVisible, showWarning, hideAlert } = useCustomAlert();
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleFetchTracker = () => {
-    if (!trackerQuery || !trackerQuery.trim()) {
+    const hasQuery = !!(trackerQuery && trackerQuery.trim());
+    const hasDate = !!trackerDate;
+    if (!hasQuery && !hasDate) {
       showWarning(
         "Search Required",
-        "Please enter or select a name to search for property records."
+        "Please enter a name or pick a date to search for property records."
       );
       return;
     }
-    onFetchTracker(trackerQuery);
+    onFetchTracker(trackerQuery, trackerDate);
   };
+
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    // On Android, event.type can be 'dismissed' or 'set'
+    setShowDatePicker(Platform.OS === "ios"); // keep open on iOS; hide on Android after selection
+    if (selectedDate) {
+      setTrackerDate(selectedDate);
+    }
+  };
+
+  const clearDate = () => {
+    setTrackerDate(null);
+  };
+
   // Enhanced premium result item renderer
   function renderResultItem({ item }: { item: NormalizedResult }) {
     const isDeal = item.type === "Deal";
@@ -202,6 +225,57 @@ export function TrackerComponent({
     );
   }
 
+  // Format date display as DD/MM/YYYY
+  const formatDisplayDate = (d: Date | null) => {
+    if (!d) return "";
+    const dd = `${d.getDate()}`.padStart(2, "0");
+    const mm = `${d.getMonth() + 1}`.padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  // Insert inside TrackerComponent, above the return(...) block
+
+  // helper to parse `DD/MM/YYYY` to Date (local)
+  const parseDDMMYYYY = (s: string | undefined | null): Date | null => {
+    if (!s) return null;
+    const parts = s.split("/");
+    if (parts.length !== 3) return null;
+    const [dd, mm, yyyy] = parts.map((p) => parseInt(p, 10));
+    if (Number.isNaN(dd) || Number.isNaN(mm) || Number.isNaN(yyyy)) return null;
+    return new Date(yyyy, mm - 1, dd);
+  };
+
+  // normalize a date to date-only (zero time)
+  const dateOnly = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  // compute filtered list locally
+  const filteredResults = trackerResults.filter((item) => {
+    // 1) name filter: check any name-like fields (dealer, customer, senderName, receiverName)
+    const q = (trackerQuery || "").trim().toLowerCase();
+    if (q) {
+      const matchesName =
+        (item.dealer || "").toLowerCase().includes(q) ||
+        (item.customer || "").toLowerCase().includes(q) ||
+        (item.senderName || "").toLowerCase().includes(q) ||
+        (item.receiverName || "").toLowerCase().includes(q);
+      if (!matchesName) return false;
+    }
+
+    // 2) date filter
+    if (trackerDate) {
+      // parse item's date (assumes item.dealDate is DD/MM/YYYY)
+      const itemDate = parseDDMMYYYY(item.dealDate);
+      if (!itemDate) return false;
+      if (dateOnly(itemDate).getTime() !== dateOnly(trackerDate).getTime()) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   return (
     <>
       <Animated.View
@@ -249,6 +323,49 @@ export function TrackerComponent({
           </TouchableOpacity>
         </View>
 
+        {/* Date Picker Row */}
+        <Text style={[styles.label, { marginTop: 12 }]}>
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={colors.textPrimary}
+          />{" "}
+          Filter by Date
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <TouchableOpacity
+            style={[
+              styles.datePickerButton,
+              { flexDirection: "row", alignItems: "center", padding: 10 },
+            ]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons name="calendar" size={18} color={colors.primary} />
+            <Text style={{ marginLeft: 8, color: colors.textPrimary }}>
+              {trackerDate ? formatDisplayDate(trackerDate) : "Select date"}
+            </Text>
+          </TouchableOpacity>
+
+          {trackerDate ? (
+            <TouchableOpacity
+              style={[styles.btn, styles.clearBtn, { paddingHorizontal: 12 }]}
+              onPress={() => {
+                clearDate();
+              }}
+            >
+              <Ionicons
+                name="close-circle-outline"
+                size={16}
+                color={colors.textPrimary}
+              />
+              <Text style={[styles.btnTextSecondary, { marginLeft: 8 }]}>
+                Clear
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+
+        {/* Buttons */}
         <View style={styles.trackerBtnRow}>
           <TouchableOpacity
             style={[styles.btn, styles.btnPrimary, styles.searchBtn]}
@@ -273,11 +390,8 @@ export function TrackerComponent({
             style={[styles.btn, styles.btnSecondary, styles.clearBtn]}
             onPress={() => {
               setTrackerQuery("");
-              // setShowSuggestionsModal(false);
-              // Optionally clear results as well
-              onFetchTracker("");
-              // onFetchSuggestions();
-              // setTrackerResults([]);
+              setTrackerDate(null);
+              onFetchTracker("", null); // clear results by fetching blank
             }}
           >
             <Ionicons
@@ -318,7 +432,7 @@ export function TrackerComponent({
                 </Text>
               </View>
               <View style={{ paddingBottom: 20 }}>
-                {trackerResults.map((item, index) => (
+                {filteredResults.map((item, index) => (
                   <View key={index}>{renderResultItem({ item })}</View>
                 ))}
               </View>
@@ -326,6 +440,18 @@ export function TrackerComponent({
           )}
         </View>
       </Animated.View>
+
+      {/* DateTimePicker (native modal) */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={trackerDate || new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={onChangeDate}
+          maximumDate={new Date(2100, 11, 31)}
+          minimumDate={new Date(1970, 0, 1)}
+        />
+      )}
 
       {/* Enhanced Suggestions Modal */}
       <Modal

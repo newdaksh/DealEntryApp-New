@@ -50,6 +50,7 @@ export default function App() {
 
   // Tracker states
   const [trackerQuery, setTrackerQuery] = useState("");
+  const [trackerDate, setTrackerDate] = useState<Date | null>(null);
   const [trackerLoading, setTrackerLoading] = useState(false);
   const [trackerResults, setTrackerResults] = useState<NormalizedResult[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -61,7 +62,7 @@ export default function App() {
   // Submitting state
   const [submitting, setSubmitting] = useState(false);
 
-  // Date picker state
+  // Date picker state (for forms)
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Animations
@@ -99,6 +100,30 @@ export default function App() {
     }
 
     return false;
+  };
+
+  // Helper to format Date -> DD/MM/YYYY (for tracker webhook)
+  const formatDateForQuery = (d: Date | null) => {
+    if (!d) return null;
+    const dd = `${d.getDate()}`.padStart(2, "0");
+    const mm = `${d.getMonth() + 1}`.padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
+  // normalize results: trim any whitespace/newlines in dealDate (and optionally other string fields)
+  const normalizeResults = (items: NormalizedResult[]): NormalizedResult[] => {
+    return items.map((r) => {
+      const copy: any = { ...r };
+      if (typeof copy.dealDate === "string") {
+        copy.dealDate = copy.dealDate.trim();
+      }
+      // if there are other fields with stray whitespace/newline, trim them too:
+      if (typeof copy.dealer === "string") copy.dealer = copy.dealer.trim();
+      if (typeof copy.customer === "string") copy.customer = copy.customer.trim();
+      if (typeof copy.status === "string") copy.status = copy.status.trim();
+      return copy as NormalizedResult;
+    });
   };
 
   // Handle form submission
@@ -274,16 +299,37 @@ export default function App() {
             <TrackerComponent
               trackerQuery={trackerQuery}
               setTrackerQuery={setTrackerQuery}
+              trackerDate={trackerDate}
+              setTrackerDate={setTrackerDate}
               trackerLoading={trackerLoading}
               trackerResults={trackerResults}
               suggestions={suggestions}
               showSuggestionsModal={showSuggestionsModal}
               setShowSuggestionsModal={setShowSuggestionsModal}
-              onFetchTracker={async (q) => {
+              onFetchTracker={async (q, date) => {
                 setTrackerLoading(true);
-                const results = await ApiService.fetchTracker(q);
-                setTrackerResults(results);
-                setTrackerLoading(false);
+                try {
+                  // format date to DD/MM/YYYY if provided (webhook expects DD/MM/YYYY)
+                  const dateStr = date ? formatDateForQuery(date) : null;
+                  let results = await ApiService.fetchTracker(q, dateStr);
+                  // If empty and date was provided, retry with trailing newline (some webhook responses store newline)
+                  if ((!results || results.length === 0) && dateStr) {
+                    // try with newline appended (handles webhook returning "11/09/2025\n")
+                    try {
+                      results = await ApiService.fetchTracker(q, dateStr + "\n");
+                    } catch (e) {
+                      console.warn("retry with newline failed:", e);
+                    }
+                  }
+                  // normalize results to trim whitespace/newlines in fields
+                  const normalized = results ? normalizeResults(results) : [];
+                  setTrackerResults(normalized);
+                } catch (err) {
+                  console.error("fetchTracker error:", err);
+                  setTrackerResults([]);
+                } finally {
+                  setTrackerLoading(false);
+                }
               }}
               onFetchSuggestions={async () => {
                 setTrackerLoading(true);
