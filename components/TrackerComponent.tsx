@@ -1,24 +1,24 @@
 // components/TrackerComponent.tsx
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   Modal,
+  Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Platform,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { NormalizedResult, colors } from "../constants/AppConstants";
 import { useCustomAlert } from "../hooks/useCustomAlert";
 import { styles } from "../styles/AppStyles";
 import { getStatusColor } from "../utils/AppUtils";
 import { CustomAlert } from "./CustomAlert";
-import { useState } from "react";
 
 interface TrackerComponentProps {
   trackerQuery: string;
@@ -348,25 +348,44 @@ export function TrackerComponent({
 
           {trackerDate ? (
             <TouchableOpacity
-              style={[styles.btn, styles.clearBtn, { paddingHorizontal: 12 }]}
+              style={[
+                {
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  backgroundColor: colors.inputBg,
+                  borderRadius: 12,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 2,
+                  elevation: 2,
+                },
+              ]}
               onPress={() => {
                 clearDate();
               }}
             >
-              <Ionicons
-                name="close-circle-outline"
-                size={16}
-                color={colors.textPrimary}
-              />
-              <Text style={[styles.btnTextSecondary, { marginLeft: 8 }]}>
-                Clear
+              <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+              <Text
+                style={[
+                  {
+                    marginLeft: 6,
+                    color: colors.textSecondary,
+                    fontSize: 14,
+                    fontWeight: '500',
+                  },
+                ]}
+              >
+                Reset
               </Text>
             </TouchableOpacity>
           ) : null}
         </View>
 
         {/* Buttons */}
-        <View style={styles.trackerBtnRow}>
+        <View style={[styles.trackerBtnRow, { marginTop: 20 }]}>
           <TouchableOpacity
             style={[styles.btn, styles.btnPrimary, styles.searchBtn]}
             onPress={handleFetchTracker}
@@ -400,7 +419,7 @@ export function TrackerComponent({
               color={colors.textPrimary}
               style={{ marginRight: 8 }}
             />
-            <Text style={styles.btnTextSecondary}>Clear</Text>
+            <Text style={styles.btnTextSecondary}>Clear All</Text>
           </TouchableOpacity>
         </View>
 
