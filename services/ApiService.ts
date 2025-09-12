@@ -199,6 +199,94 @@ export class ApiService {
     }
   }
 
+  // Chat with AI Agent - sends message to AI agent and gets response
+  static async chatWithAI(message: string): Promise<string> {
+    if (!message || !message.trim()) {
+      throw new Error("Message cannot be empty");
+    }
+
+    try {
+      const authHeader = this.getAuthHeader();
+
+      const payload = {
+        message: message.trim(),
+        timestamp: new Date().toISOString(),
+      };
+
+      const res = await fetch(
+        "https://netlify-proxy-daksh.netlify.app/.netlify/functions/proxy?path=https://n8n.dakshjain.me/webhook/webhook-chatbot",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || `Request failed with status ${res.status}`);
+      }
+
+      const response = await res.json();
+      console.log("AI Agent response:", response);
+      // ... (rest of the file unchanged)
+
+      // Extract the response text from the AI agent
+      let responseText = "";
+
+      if (response.message) {
+        responseText = response.message; // Use proxy's pre-extracted message first
+      } else if (response.upstreamBody) {
+        // Handle upstreamBody, which could be string or object
+        let upstream = response.upstreamBody;
+        try {
+          if (typeof upstream === "string") {
+            // Try parsing only if it looks like JSON (e.g., starts with { or [)
+            if (
+              upstream.trim().startsWith("{") ||
+              upstream.trim().startsWith("[")
+            ) {
+              upstream = JSON.parse(upstream);
+            }
+          }
+          responseText =
+            upstream.response ||
+            upstream.text ||
+            upstream.message ||
+            (typeof upstream === "string"
+              ? upstream
+              : JSON.stringify(upstream));
+        } catch (e) {
+          // Fallback to raw upstreamBody if parsing fails (e.g., plain text)
+          responseText = upstream;
+        }
+      } else if (typeof response === "string") {
+        responseText = response;
+      } else if (response.response) {
+        responseText = response.response;
+      } else if (response.text) {
+        responseText = response.text;
+      } else {
+        responseText =
+          JSON.stringify(response) ||
+          "I received your message but couldn't generate a proper response.";
+      }
+
+      // ... (rest of the file unchanged)
+
+      return (
+        responseText ||
+        "I received your message but couldn't generate a proper response."
+      );
+    } catch (e: any) {
+      console.error("chatWithAI error:", e);
+      throw new Error(e?.message || "Failed to communicate with AI agent");
+    }
+  }
+
   // Fetch combined results for a given name q (case-insensitive) or by date.
   // If both q and date are provided, the backend will apply both filters.
   static async fetchTracker(
@@ -216,7 +304,8 @@ export class ApiService {
       // Build query params
       const params: string[] = ["path=tracker"];
       if (q && q.trim()) params.push(`q=${encodeURIComponent(q.trim())}`);
-      if (date && date.trim()) params.push(`date=${encodeURIComponent(date.trim())}`);
+      if (date && date.trim())
+        params.push(`date=${encodeURIComponent(date.trim())}`);
 
       const url = `${WEBHOOK_URL_FULL}?${params.join("&")}`;
 

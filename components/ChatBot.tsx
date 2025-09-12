@@ -34,7 +34,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      text: "👋 Hello! I'm your Property AI Assistant. I can help you search through your deals, regular transactions, and provide insights about your property business. What would you like to know?",
+      text: "👋 Hello! I'm your Property AI Assistant powered by Google Gemini. I can help you search through your deals and regular transactions, analyze your data, and answer questions about your property business. What would you like to know?",
       isUser: false,
       timestamp: new Date(),
     },
@@ -160,51 +160,20 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
     }, 100);
 
     try {
-      // Call your n8n workflow API
-      const response = await ApiService.fetchTracker(inputText.trim(), null);
+      // Call the new AI agent endpoint
+      const aiResponse = await ApiService.chatWithAI(inputText.trim());
 
-      let botText = "I found some information for you:";
+      let botText = aiResponse;
       let suggestions: string[] = [];
 
-      if (response && Array.isArray(response) && response.length > 0) {
-        // Format the response nicely
-        const results = response.slice(0, 5); // Limit to 5 results
-        botText = `I found ${response.length} result(s):\n\n`;
-
-        results.forEach((item, index) => {
-          if (item.type === "Deal") {
-            botText += `📋 Deal ${index + 1}:\n`;
-            botText += `• Dealer: ${item.dealer || "N/A"}\n`;
-            botText += `• Customer: ${item.customer || "N/A"}\n`;
-            botText += `• Amount: ${item.amount || "N/A"}\n`;
-            botText += `• Date: ${item.dealDate || "N/A"}\n`;
-            botText += `• Status: ${item.status || "N/A"}\n\n`;
-          } else if (item.type === "Regular") {
-            botText += `💸 Transfer ${index + 1}:\n`;
-            botText += `• From: ${item.senderName || "N/A"}\n`;
-            botText += `• To: ${item.receiverName || "N/A"}\n`;
-            botText += `• Amount: ${item.amountTransferred || "N/A"}\n`;
-            botText += `• Date: ${item.dealDate || "N/A"}\n`;
-            botText += `• Status: ${item.status || "N/A"}\n\n`;
-          }
-        });
-
-        if (response.length > 5) {
-          botText += `... and ${response.length - 5} more results.`;
+      // Try to get suggestions for follow-up questions
+      try {
+        suggestions = await ApiService.fetchSuggestions();
+        if (suggestions.length > 0) {
+          suggestions = suggestions.slice(0, 6); // Limit suggestions
         }
-      } else {
-        botText =
-          "🤔 I couldn't find any results matching your query. Try searching for:\n\n• Customer or dealer names\n• Transaction amounts\n• Dates (e.g., '2024-01-15')\n• Status (Done, Pending, Future Task)";
-
-        // Get suggestions
-        try {
-          suggestions = await ApiService.fetchSuggestions();
-          if (suggestions.length > 0) {
-            botText += "\n\n💡 Here are some names from your database:";
-          }
-        } catch (error) {
-          console.log("Failed to fetch suggestions:", error);
-        }
+      } catch (error) {
+        console.log("Failed to fetch suggestions:", error);
       }
 
       const botMessage: Message = {
@@ -212,7 +181,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
         text: botText,
         isUser: false,
         timestamp: new Date(),
-        suggestions: suggestions.slice(0, 6), // Limit suggestions
+        suggestions: suggestions.length > 0 ? suggestions : undefined,
       };
 
       stopTypingAnimation();
@@ -405,7 +374,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
           <View style={chatStyles.headerText}>
             <Text style={chatStyles.headerTitle}>Property AI Assistant</Text>
             <Text style={chatStyles.headerSubtitle}>
-              Ask me about your deals & transactions
+              Powered by Google Gemini AI
             </Text>
           </View>
           <View style={chatStyles.statusIndicator}>
@@ -462,7 +431,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
                 style={chatStyles.textInput}
                 value={inputText}
                 onChangeText={setInputText}
-                placeholder="Ask about deals, transactions, or search by name..."
+                placeholder="Ask me anything about your deals, transactions, or property business..."
                 placeholderTextColor={colors.textLight}
                 multiline
                 maxLength={500}
