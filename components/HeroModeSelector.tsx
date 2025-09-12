@@ -208,6 +208,14 @@ const HeroModeSelector: React.FC<HeroModeSelectorProps> = ({
       gradient: [colors.success, colors.info] as const,
       description: "Search and view all records",
     },
+    {
+      id: "chat" as Mode,
+      title: "Chat with AI",
+      subtitle: "AI Property Assistant",
+      icon: "chatbubbles",
+      gradient: ["#6366F1", "#8B5CF6"] as const,
+      description: "Ask AI about your deals & data",
+    },
   ];
 
   const handleModeSelect = (selectedMode: Mode) => {

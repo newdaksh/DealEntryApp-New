@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import ChatBot from "../../components/ChatBot";
 import { DealForm } from "../../components/DealForm";
 import HeroModeSelector from "../../components/HeroModeSelector";
 import { HomeButton } from "../../components/HomeButton";
@@ -120,7 +121,8 @@ export default function App() {
       }
       // if there are other fields with stray whitespace/newline, trim them too:
       if (typeof copy.dealer === "string") copy.dealer = copy.dealer.trim();
-      if (typeof copy.customer === "string") copy.customer = copy.customer.trim();
+      if (typeof copy.customer === "string")
+        copy.customer = copy.customer.trim();
       if (typeof copy.status === "string") copy.status = copy.status.trim();
       return copy as NormalizedResult;
     });
@@ -316,7 +318,10 @@ export default function App() {
                   if ((!results || results.length === 0) && dateStr) {
                     // try with newline appended (handles webhook returning "11/09/2025\n")
                     try {
-                      results = await ApiService.fetchTracker(q, dateStr + "\n");
+                      results = await ApiService.fetchTracker(
+                        q,
+                        dateStr + "\n"
+                      );
                     } catch (e) {
                       console.warn("retry with newline failed:", e);
                     }
@@ -342,6 +347,8 @@ export default function App() {
               setTrackerResults={setTrackerResults}
             />
           </ScrollView>
+        ) : mode === "chat" ? (
+          <ChatBot isVisible={!isHomeScreen} />
         ) : (
           <ScrollView
             style={styles.container}

@@ -1,7 +1,7 @@
 // AppConstants.ts
 import { Dimensions } from "react-native";
 
-export type Mode = "regular" | "deal" | "tracker";
+export type Mode = "regular" | "deal" | "tracker" | "chat";
 
 // === CONFIG — CHANGE THESE ===
 export const WEBHOOK_URL_FULL =
