@@ -26,11 +26,12 @@ interface Message {
 
 interface ChatBotProps {
   isVisible: boolean;
+  onHomePress?: () => void;
 }
 
 const { width } = Dimensions.get("window");
 
-const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ isVisible, onHomePress }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -413,6 +414,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        style={chatStyles.keyboardAvoidingView}
       >
         <Animated.View
           style={[
@@ -478,6 +480,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ isVisible }) => {
             </View>
           </LinearGradient>
         </Animated.View>
+
+        {/* Home Button */}
+        {onHomePress && (
+          <View style={chatStyles.homeButtonContainer}>
+            <TouchableOpacity
+              style={chatStyles.homeButton}
+              onPress={onHomePress}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryLight]}
+                style={chatStyles.homeButtonGradient}
+              >
+                <Ionicons name="home" size={24} color="white" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </Animated.View>
   );
@@ -489,8 +508,8 @@ const chatStyles = {
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 45,
+    paddingBottom: 12,
     paddingHorizontal: 20,
     position: "relative" as const,
     overflow: "hidden" as const,
@@ -501,12 +520,12 @@ const chatStyles = {
     zIndex: 2,
   },
   headerIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center" as const,
     alignItems: "center" as const,
-    marginRight: 15,
+    marginRight: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -517,13 +536,13 @@ const chatStyles = {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold" as const,
     color: "white",
-    marginBottom: 2,
+    marginBottom: 1,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: "rgba(255,255,255,0.8)",
   },
   statusIndicator: {
@@ -554,7 +573,7 @@ const chatStyles = {
   },
   messagesList: {
     padding: 20,
-    paddingBottom: 10,
+    paddingBottom: 20,
   },
   messageContainer: {
     marginBottom: 16,
@@ -686,6 +705,9 @@ const chatStyles = {
     backgroundColor: colors.textLight,
     marginHorizontal: 2,
   },
+  keyboardAvoidingView: {
+    backgroundColor: "transparent",
+  },
   inputContainer: {
     backgroundColor: "transparent",
   },
@@ -738,6 +760,28 @@ const chatStyles = {
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+  },
+  homeButtonContainer: {
+    alignItems: "center" as const,
+    paddingVertical: 15,
+    paddingBottom: 20,
+  },
+  homeButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: "hidden" as const,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  homeButtonGradient: {
+    width: 56,
+    height: 56,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 };
 

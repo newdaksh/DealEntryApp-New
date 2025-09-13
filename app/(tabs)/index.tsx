@@ -348,7 +348,10 @@ export default function App() {
             />
           </ScrollView>
         ) : mode === "chat" ? (
-          <ChatBot isVisible={!isHomeScreen} />
+          <ChatBot
+            isVisible={!isHomeScreen}
+            onHomePress={() => setIsHomeScreen(true)}
+          />
         ) : (
           <ScrollView
             style={styles.container}
